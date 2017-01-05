@@ -270,12 +270,6 @@ d-i passwd/root-password-again password cobbler
 #d-i grub-installer/with_other_os boolean true
 d-i grub-installer/bootdev string /dev/sda
 
-## Ensure PXE is not run after a successful install
-# We set it here, then we execute it in post install with late_command
-#set system_name = $getVar('system_name','')
-#set srv = $getVar('http_server','')
-#set nopxe = "in-target wget http://%s/cblr/svc/op/nopxe/system/%s -O /dev/null" % (srv, system_name)
-
 #############
 #
 # Post Install
@@ -283,15 +277,14 @@ d-i grub-installer/bootdev string /dev/sda
 #############
 
 # Command Line 1: Allow root to SSH.
-# Command Line 2: Cobbler overwrites sources.list with its own repos. Put the default Ubuntu sources.list back.
-# Command Line 3: Cobbler API call to turn off netboot.
+# Command Line 2+3+4: Add SSH public key to root.
+# Command Line 5: Cobbler API call to turn off netboot.
 d-i preseed/late_command string \
     sed -i '/PermitRootLogin / s/ .*/ yes/' /target/etc/ssh/sshd_config; \
     mkdir -p /target/root/.ssh; \
     /bin/sh -c "echo 'ssh-rsa KEY' >> /target/root/.ssh/authorized_keys"; \
     chmod -R go-rwx /target/root/.ssh/; \
-    $nopxe
-
+    wget http://$http_server/cblr/svc/op/nopxe/system/$system_name -O /dev/null
 #############
 #
 # Finish
